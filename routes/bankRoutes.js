@@ -15,4 +15,6 @@ router.get('/banks', bankController.getAllBanks);
 // Get accounts of a specific bank
 router.get('/banks/:bankName', bankController.getBankAccounts);
 
+router.delete('/banks/:bankName/accounts/:accountId', bankController.deleteAccountFromBank);
+
 module.exports = router;

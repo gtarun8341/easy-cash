@@ -100,6 +100,9 @@ const getUserDetails = async (req, res) => {
 
     // Fetch user by ID
     const user = await User.findById(userId);
+        // Fetch wallet balance from User model
+        const walletBalance = user ? user.walletAmount : 0;
+    console.log(walletBalance,"jghgerty")
     if (!user) {
       console.log("No user found with the given ID.");
       return res.status(404).json({ message: 'User not found' });
@@ -146,6 +149,8 @@ const getUserDetails = async (req, res) => {
       totalDeposit: totalDepositAmount,
       totalRecharge: totalRechargeAmount,
       status: user.status,
+      walletBalance: walletBalance,
+
     });
   } catch (error) {
     console.error('Error fetching user details:', error);
@@ -153,4 +158,66 @@ const getUserDetails = async (req, res) => {
   }
 };
 
-module.exports = { changeUserStatus, getAllUsers ,getAdminStatistics,getUserDetails};
+// Function to add balance
+const addUserBalance = async (req, res) => {
+  const { amount } = req.body;
+  const { id } = req.params;
+
+  console.log(req.body, req.params);
+
+  try {
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    console.log(user);
+
+    // Convert amount to a number
+    const numericAmount = Number(amount); // or parseFloat(amount)
+
+    // Ensure that the numeric amount is valid
+    if (isNaN(numericAmount) || numericAmount <= 0) {
+      return res.status(400).json({ message: 'Invalid amount' });
+    }
+
+    user.walletAmount += numericAmount; // Update the wallet balance
+    console.log(user.walletAmount);
+
+    await user.save();
+
+    res.status(200).json(user);
+  } catch (error) {
+    console.error('Error adding balance:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+
+// Function to cut balance
+const cutUserBalance = async (req, res) => {
+  const { amount } = req.body;
+  const { id } = req.params;
+
+  try {
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    if (user.walletAmount < amount) {
+      return res.status(400).json({ message: 'Insufficient balance' });
+    }
+
+    user.walletAmount -= amount; // Update the wallet balance
+    await user.save();
+
+    res.status(200).json(user);
+  } catch (error) {
+    console.error('Error cutting balance:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+
+module.exports = { changeUserStatus, getAllUsers ,getAdminStatistics,getUserDetails,addUserBalance,cutUserBalance};

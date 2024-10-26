@@ -66,3 +66,21 @@ exports.getBankAccounts = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+exports.deleteAccountFromBank = async (req, res) => {
+  try {
+    const { bankName, accountId } = req.params;
+
+    const bank = await Bank.findOne({ _id: bankName });
+    if (!bank) {
+      return res.status(404).json({ message: 'Bank not found' });
+    }
+
+    bank.accounts = bank.accounts.filter(account => account._id.toString() !== accountId);
+    await bank.save();
+
+    res.status(200).json({ message: 'Account deleted', bank });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};

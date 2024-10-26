@@ -12,15 +12,18 @@ const getUserTransactions = async (req, res) => {
       .populate('user', 'name email') // Populate user info if needed
       .sort({ createdAt: -1 }); // Sort by creation date, latest first
 
-    const recharges = await Recharge.find({ userId });
-    const withdrawals = await Withdrawal.find({ userId });
+    const recharges = await Recharge.find({ userId }).sort({ createdAt: -1 });
+    const withdrawals = await Withdrawal.find({ userId }).sort({ createdAt: -1 });
 
     // Combine transactions, recharges, and withdrawals
     const allTransactions = [
-      ...transactions.map(t => ({ ...t.toObject(), type: 'Transaction' })),
+      ...transactions.map(t => ({ ...t.toObject(), type: 'Deposit' })),
       ...recharges.map(r => ({ ...r.toObject(), type: 'Recharge' })),
       ...withdrawals.map(w => ({ ...w.toObject(), type: 'Withdrawal' })),
     ];
+
+    // Sort all transactions by creation date, latest first
+    allTransactions.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
     return res.status(200).json({ transactions: allTransactions });
   } catch (error) {
