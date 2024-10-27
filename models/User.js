@@ -28,6 +28,10 @@ const UserSchema = new mongoose.Schema({
     enum: ['active', 'banned'],
     default: 'active',
   },
+  isAdmin: { // Field to identify admin users
+    type: Boolean,
+    default: false,
+  },
 });
 
 const User = mongoose.model('User', UserSchema);

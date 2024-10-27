@@ -31,6 +31,8 @@ const registerUser = async (req, res) => {
   }
 };
 
+// controllers/authController.js
+
 const loginUser = async (req, res) => {
   const { number, password } = req.body;
 
@@ -40,7 +42,6 @@ const loginUser = async (req, res) => {
       return res.status(400).json({ message: 'Invalid credentials' });
     }
 
-    // Check if user is banned
     if (user.status === 'banned') {
       return res.status(403).json({ message: 'User is banned' });
     }
@@ -50,13 +51,14 @@ const loginUser = async (req, res) => {
       return res.status(400).json({ message: 'Invalid credentials' });
     }
 
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
-    res.json({ token, user: { id: user._id, name: user.name, number: user.number } });
+    const token = jwt.sign({ id: user._id, isAdmin: user.isAdmin }, process.env.JWT_SECRET, { expiresIn: '30d' });
+    res.json({ token, user: { id: user._id, name: user.name, number: user.number, isAdmin: user.isAdmin } });
   } catch (err) {
     console.error(err);
     res.status(500).send('Server Error');
   }
 };
+
 
 const updatePassword = async (req, res) => {
   const { password } = req.body;
@@ -98,5 +100,24 @@ const getUserProfile = async (req, res) => {
   }
 };
 
-module.exports = { registerUser, loginUser, updatePassword, updateWithdrawalPassword,getUserProfile };
+const verifyToken = (req, res) => {
+  const { token } = req.body;
+
+  console.log('Starting token verification...');
+  console.log('Received token:', token);
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    console.log('Token verified successfully:', decoded);
+
+    // Send back both isValid and isAdmin status
+    res.json({ isValid: true, isAdmin: decoded.isAdmin });
+  } catch (error) {
+    console.error('Token verification failed:', error.message);
+    console.error('Error stack:', error.stack);
+    res.json({ isValid: false });
+  }
+};
+
+module.exports = { registerUser, loginUser, updatePassword, updateWithdrawalPassword,getUserProfile,verifyToken };
 
