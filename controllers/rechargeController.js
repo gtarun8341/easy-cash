@@ -59,6 +59,7 @@ const getPendingRecharges = async (req, res) => {
   
   // Update recharge status (Accept/Reject)
 // Update Recharge Status
+// Update Recharge Status
 const updateRechargeStatus = async (req, res) => {
   const { id } = req.params;
   const { status, rejectionNote } = req.body;
@@ -78,17 +79,21 @@ const updateRechargeStatus = async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
+    // If the status is 'accepted', do nothing regarding wallet deduction
     if (status === 'accepted') {
-      if (user.walletAmount < recharge.amount) {
-        return res.status(400).json({ message: 'Insufficient wallet balance' });
-      }
-      user.walletAmount -= recharge.amount;
-      await user.save();
+      // No need to check balance or deduct again
+      recharge.status = status; // Just update the status
+    } 
+
+    // If the status is 'rejected', add the amount back to the user's wallet
+    if (status === 'rejected') {
+      user.walletAmount += recharge.amount; // Add the amount back
+      recharge.rejectionNote = rejectionNote; // Store rejection note
+      recharge.status = status; // Just update the status
+      await user.save(); // Save updated user balance
     }
 
-    recharge.status = status;
-    if (status === 'rejected') recharge.rejectionNote = rejectionNote;
-    await recharge.save();
+    await recharge.save(); // Save updated recharge status
 
     res.json(recharge);
   } catch (error) {
@@ -96,6 +101,7 @@ const updateRechargeStatus = async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 };
+
 
   
   const getLastSuccessfulBotRecharge = async (req, res) => {
