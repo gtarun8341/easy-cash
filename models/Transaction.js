@@ -19,6 +19,7 @@ const TransactionSchema = new mongoose.Schema({
     required: true
   },
   createdAt: { type: Date, default: Date.now },
+  rejectionNote: { type: String }, // Field to store rejection note
 
   status: {
     type: String,

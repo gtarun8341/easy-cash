@@ -63,48 +63,37 @@ const getWithdrawals = async (req, res) => {
     }
   };
   
-  const updateWithdrawalStatus = async (req, res) => {
-    const { id } = req.params;
-    const { status } = req.body; // Expecting { status: 'accepted' } or { status: 'rejected' }
-  
-    console.log(`Received status update request: ${status} for withdrawal ID: ${id}`);
-  
-    // Validate the status
-    if (!status || !['accepted', 'rejected'].includes(status)) {
-      console.error(`Invalid status: ${status} provided for withdrawal ID: ${id}`);
-      return res.status(400).json({ message: 'Invalid status' });
+// Update Withdrawal Status
+const updateWithdrawalStatus = async (req, res) => {
+  const { id } = req.params;
+  const { status, rejectionNote } = req.body;
+
+  if (!status || !['accepted', 'rejected'].includes(status)) {
+    return res.status(400).json({ message: 'Invalid status' });
+  }
+
+  try {
+    const withdrawal = await Withdrawal.findById(id);
+    if (!withdrawal) {
+      return res.status(404).json({ message: 'Withdrawal not found' });
     }
-  
-    try {
-      const withdrawal = await Withdrawal.findById(id);
-      if (!withdrawal) {
-        console.warn(`Withdrawal not found for ID: ${id}`);
-        return res.status(404).json({ message: 'Withdrawal not found' });
-      }
-  
-      console.log(`Found withdrawal request: ${withdrawal}`);
-  
-      if (status === 'rejected') {
-        // Add the amount back to the user's wallet balance
-        console.log(`Rejecting withdrawal request. Adding amount back to user ID: ${withdrawal.userId}, amount: ₹${withdrawal.amount}`);
-        await User.findByIdAndUpdate(withdrawal.userId, {
-          $inc: { walletAmount: withdrawal.amount } // Increment user's wallet balance
-        });
-        console.log(`Successfully updated wallet balance for user ID: ${withdrawal.userId}`);
-      }
-  
-      // Update the withdrawal request status
-      withdrawal.status = status;
-      await withdrawal.save();
-      console.log(`Withdrawal request updated successfully: ${withdrawal}`);
-  
-      res.status(200).json(withdrawal);
-    } catch (error) {
-      console.error('Error updating withdrawal status:', error);
-      res.status(500).json({ message: 'Server error' });
+
+    if (status === 'rejected') {
+      await User.findByIdAndUpdate(withdrawal.userId, { $inc: { walletAmount: withdrawal.amount } });
+      withdrawal.rejectionNote = rejectionNote; // Save the rejection reason
     }
-  };
-  
+
+    withdrawal.status = status;
+    await withdrawal.save();
+
+    res.status(200).json(withdrawal);
+  } catch (error) {
+    console.error('Error updating withdrawal status:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+
   
 module.exports = {
   createWithdrawal,

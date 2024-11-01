@@ -58,48 +58,45 @@ const getPendingRecharges = async (req, res) => {
   };
   
   // Update recharge status (Accept/Reject)
-  const updateRechargeStatus = async (req, res) => {
-    const { id } = req.params;
-    const { status } = req.body;
-  
-    if (!['accepted', 'rejected'].includes(status)) {
-      return res.status(400).json({ message: 'Invalid status' });
+// Update Recharge Status
+const updateRechargeStatus = async (req, res) => {
+  const { id } = req.params;
+  const { status, rejectionNote } = req.body;
+
+  if (!['accepted', 'rejected'].includes(status)) {
+    return res.status(400).json({ message: 'Invalid status' });
+  }
+
+  try {
+    const recharge = await Recharge.findById(id).populate('userId');
+    if (!recharge) {
+      return res.status(404).json({ message: 'Recharge not found' });
     }
-  
-    try {
-      const recharge = await Recharge.findById(id).populate('userId'); // Populate userId to get user details
-  
-      if (!recharge) {
-        return res.status(404).json({ message: 'Recharge not found' });
-      }
-  
-      const user = await User.findById(recharge.userId._id); // Fetch the user associated with the recharge
-  
-      if (!user) {
-        return res.status(404).json({ message: 'User not found' });
-      }
-  
-      // Handle the accepted status
-      if (status === 'accepted') {
-        // Check if the user's wallet has enough balance
-        if (user.walletAmount < recharge.amount) {
-          return res.status(400).json({ message: 'Insufficient wallet balance' });
-        }
-  
-        // Deduct the recharge amount from the user's wallet
-        user.walletAmount -= recharge.amount;
-        await user.save();
-      }
-  
-      recharge.status = status; // Update the status of the recharge
-      await recharge.save(); // Save the updated recharge document
-  
-      res.json(recharge);
-    } catch (error) {
-      console.error('Error updating recharge status:', error);
-      res.status(500).json({ message: 'Server error' });
+
+    const user = await User.findById(recharge.userId._id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
     }
-  };
+
+    if (status === 'accepted') {
+      if (user.walletAmount < recharge.amount) {
+        return res.status(400).json({ message: 'Insufficient wallet balance' });
+      }
+      user.walletAmount -= recharge.amount;
+      await user.save();
+    }
+
+    recharge.status = status;
+    if (status === 'rejected') recharge.rejectionNote = rejectionNote;
+    await recharge.save();
+
+    res.json(recharge);
+  } catch (error) {
+    console.error('Error updating recharge status:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
   
   const getLastSuccessfulBotRecharge = async (req, res) => {
     try {

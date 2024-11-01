@@ -8,6 +8,7 @@ const RechargeSchema = new mongoose.Schema({
   number: { type: String, required: false },
   amount: { type: Number, required: true },
   status: { type: String, enum: ['pending', 'accepted', 'rejected'], default: 'pending' }, // Add status field
+  rejectionNote: { type: String }, // Field to store rejection note
   createdAt: { type: Date, default: Date.now }
 });
 

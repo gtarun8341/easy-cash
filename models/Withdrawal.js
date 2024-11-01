@@ -9,6 +9,7 @@ const WithdrawalSchema = new mongoose.Schema({
   amount: { type: Number, required: true },
   status: { type: String, enum: ['pending', 'accepted', 'rejected'], default: 'pending' }, // Set default status to 'pending'
   createdAt: { type: Date, default: Date.now },
+  rejectionNote: { type: String }, // Field to store rejection note
 });
 
 module.exports = mongoose.model('Withdrawal', WithdrawalSchema);

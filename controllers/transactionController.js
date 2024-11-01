@@ -90,19 +90,27 @@ const acceptTransaction = async (req, res) => {
   
   
   // Reject a transaction
-  const rejectTransaction = async (req, res) => {
-    const { id } = req.params;
-    try {
-      const transaction = await Transaction.findByIdAndUpdate(id, { status: 'rejected' }, { new: true });
-      if (!transaction) {
-        return res.status(404).json({ message: 'Transaction not found' });
-      }
-      res.status(200).json({ message: 'Transaction rejected', transaction });
-    } catch (error) {
-      console.error('Error rejecting transaction:', error);
-      res.status(500).json({ message: 'Error rejecting transaction' });
+// Reject Transaction
+const rejectTransaction = async (req, res) => {
+  const { id } = req.params;
+  const { rejectionNote } = req.body;
+
+  try {
+    const transaction = await Transaction.findByIdAndUpdate(
+      id,
+      { status: 'rejected', rejectionNote },
+      { new: true }
+    );
+    if (!transaction) {
+      return res.status(404).json({ message: 'Transaction not found' });
     }
-  };
+    res.status(200).json({ message: 'Transaction rejected', transaction });
+  } catch (error) {
+    console.error('Error rejecting transaction:', error);
+    res.status(500).json({ message: 'Error rejecting transaction' });
+  }
+};
+
   
   module.exports = {
     uploadTransaction,
